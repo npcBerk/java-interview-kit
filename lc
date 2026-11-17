@@ -41,6 +41,8 @@ Usage: ./lc <command>
   fav <no> [note]             Add a problem to notes/favorites.md
   try [file]                  Run playground/Scratch.java (or the given file)
   spring                      Start the Spring Boot playground (http://localhost:8080)
+  update                      Pull the latest CLI, helpers and new stubs from the template
+                              (never touches your solutions, tests or notes)
 
 Patterns: $PATTERNS
 EOF
@@ -96,7 +98,7 @@ cmd_test() {
     filter=("-Dtest=P$1_*Test" "-Dsurefire.failIfNoSpecifiedTests=false")
   fi
   log=$(mktemp)
-  if (cd "$LC" && mvn -B -ntp test ${filter[@]+"${filter[@]}"} >"$log" 2>&1); then
+  if (cd "$LC" && ./mvnw -B -ntp test ${filter[@]+"${filter[@]}"} >"$log" 2>&1); then
     grep -E "^\[(INFO|WARNING)\] Tests run:" "$log" | tail -1 | sed 's/^\[[A-Z]*\] /✓ /'
   else
     awk '/COMPILATION ERROR|\[ERROR\] (Failures|Errors):/{p=1} /BUILD FAILURE/{p=0} p' "$log"
@@ -170,11 +172,27 @@ cmd_open() {
 
 cmd_try() {
   local file="${1:-$ROOT/playground/Scratch.java}"
-  (cd "$LC" && mvn -B -ntp -q compile) || die "could not compile the leetcode module"
+  (cd "$LC" && ./mvnw -B -ntp -q compile) || die "could not compile the leetcode module"
   java -cp "$LC/target/classes" "$file"
 }
 
 cmd_spring() { cd "$ROOT/spring/spring-playground" && ./mvnw -ntp spring-boot:run; }
+
+# Files owned by the template. Solutions, tests and notes are never in this list.
+TOOL_PATHS=(lc scripts leetcode/templates leetcode/mvnw leetcode/mvnw.cmd leetcode/.mvn
+  leetcode/src/main/java/interviewkit/common leetcode/src/test/java/interviewkit/support notes/patterns.md)
+
+cmd_update() {
+  local url="${LC_TEMPLATE_URL:-https://github.com/npcBerk/java-interview-kit.git}"
+  cd "$ROOT"
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "not a git repository"
+  git diff --quiet HEAD -- "${TOOL_PATHS[@]}" || die "commit or stash your changes to these first: ${TOOL_PATHS[*]}"
+  git remote get-url template >/dev/null 2>&1 || git remote add template "$url"
+  git fetch -q template main || die "could not fetch $(git remote get-url template)"
+  git checkout template/main -- "${TOOL_PATHS[@]}"
+  "$ROOT/scripts/seed.sh"
+  echo "Updated from $(git rev-parse --short template/main). Review with: git status"
+}
 
 case "${1:-help}" in
   new)      shift; cmd_new "$@" ;;
@@ -186,5 +204,6 @@ case "${1:-help}" in
   open)     shift; cmd_open "$@" ;;
   try)      shift; cmd_try "$@" ;;
   spring)   cmd_spring ;;
+  update)   cmd_update ;;
   *)        cmd_help ;;
 esac

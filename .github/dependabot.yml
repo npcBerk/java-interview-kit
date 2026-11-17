@@ -1,0 +1,11 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /leetcode
+    schedule: { interval: monthly }
+  - package-ecosystem: maven
+    directory: /spring/spring-playground
+    schedule: { interval: monthly }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }

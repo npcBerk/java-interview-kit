@@ -20,7 +20,7 @@ Java 21 · Maven · JUnit 5 + AssertJ · Spring Boot 4 · one small CLI (`./lc`)
 ## Quick start
 
 1. Click **Use this template → Create a new repository**. Making it **private** is a good idea once your notes get personal.
-2. Clone it and check the setup (you need JDK 21+ and Maven):
+2. Clone it and check the setup. All you need is **JDK 21+**: Maven comes with the repo through the Maven wrapper, and the first run downloads it.
 
 ```bash
 ./lc list
@@ -46,6 +46,8 @@ In the solution file, delete the `throw new UnsupportedOperationException("TODO"
 ./lc test 3
 ```
 
+> **Windows:** `lc` is a Bash script. Run it from [WSL](https://learn.microsoft.com/windows/wsl/install) or Git Bash. The Java code itself works anywhere, so you can also run the tests from your IDE.
+
 ## Commands
 
 | Command | What it does |
@@ -59,6 +61,7 @@ In the solution file, delete the `throw new UnsupportedOperationException("TODO"
 | `./lc fav <no> [note]` | Add the problem to `notes/favorites.md` |
 | `./lc try [file]` | Run `playground/Scratch.java` (or the given file) |
 | `./lc spring` | Start the Spring Boot playground on http://localhost:8080 |
+| `./lc update` | Pull the latest CLI, helpers and new stubs from this template (see below) |
 
 ## Layout
 
@@ -74,7 +77,7 @@ In the solution file, delete the `throw new UnsupportedOperationException("TODO"
 │   └── templates/                  ← used by ./lc new
 ├── scripts/
 │   ├── blind75.tsv                 ← problem list (number, slug, pattern, title, signature)
-│   └── seed-blind75.sh             ← regenerates missing stubs from the list
+│   └── seed.sh                     ← creates missing stubs from a list (default: blind75.tsv)
 ├── notes/                          ← mistakes, favorites, patterns, behavioral (STAR)
 ├── playground/Scratch.java         ← free experiments
 └── spring/spring-playground/       ← Spring Boot: web, JPA, H2, validation, actuator
@@ -84,17 +87,16 @@ In the solution file, delete the `throw new UnsupportedOperationException("TODO"
 
 - Problems marked **(Premium)** need LeetCode Premium. Most of them have free equivalents on LintCode or NeetCode.
 - Design problems (Trie, Codec…) use the `P<no>_<Name>` class name. Rename the class to LeetCode's name when you submit.
-- Want a different list (NeetCode 150, Grind 75, your company's tagged list)? Add rows to a TSV in the same format and point `seed-blind75.sh` at it, or use `./lc new`.
+- Want a different list (NeetCode 150, Grind 75, your company's tagged list)? Write a TSV in the same format as `scripts/blind75.tsv` and run `scripts/seed.sh path/to/list.tsv`. Problems you already have are skipped. For a single problem, use `./lc new`.
+- VS Code's **Live Run** task (`.vscode/tasks.json`) re-runs the open Java file on every save. It needs [`entr`](https://eradman.com/entrproject/): `brew install entr` or `apt install entr`.
 
 ### Getting template updates into your copy
 
 ```bash
-git remote add template https://github.com/npcBerk/java-interview-kit.git
+./lc update
 ```
 
-```bash
-git fetch template && git merge template/main --allow-unrelated-histories
-```
+This adds this repo as a `template` remote and updates only the files the template owns: the `lc` CLI, `scripts/`, the code templates, `common/` and `support/` helpers, the Maven wrapper and `notes/patterns.md`. It also creates stubs for any newly added problems. Your solutions, tests and notes are never touched. Check the result with `git status`, then commit.
 
 ## Contributing
 

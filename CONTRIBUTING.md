@@ -13,7 +13,7 @@ Thanks for helping out! Bug reports, new problem lists, CLI improvements and doc
 1. Add rows to `scripts/blind75.tsv`, or to a new TSV in the same format. The columns are tab-separated:
    `number  slug  pattern  title  signature`. Separate multiple methods with `;;`.
 2. The pattern must be one of the `PATTERNS` in `lc`. If you need a new one, add it there and in `notes/patterns.md`.
-3. Run `scripts/seed-blind75.sh`, then `./lc test`, and commit the generated files.
+3. Run `scripts/seed.sh [your-list.tsv]`, then `./lc test`, and commit the generated files.
 
 ## Changing the CLI
 
