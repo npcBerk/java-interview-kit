@@ -6,7 +6,7 @@
 
 A ready-to-use **GitHub template** for coding-interview prep in Java. It's offline and works pattern by pattern.
 
-Java 21 · Maven · JUnit 5 + AssertJ · Spring Boot 4 · one small CLI (`./lc`)
+Java 21 · Maven · JUnit 5 + AssertJ · one small CLI (`./lc`)
 
 <p align="center"><img src="docs/demo.svg" alt="lc CLI: progress per pattern, problem list with solved and favorite marks, a random pick and the test summary" width="520"></p>
 
@@ -14,8 +14,9 @@ Java 21 · Maven · JUnit 5 + AssertJ · Spring Boot 4 · one small CLI (`./lc`)
 
 - **Organized by pattern, not by number.** The Blind 75 ships pre-sorted into `slidingwindow/`, `heap/`, `graph/`, `dp/`… so you practice the way interviews test you.
 - **Unsolved = skipped, never red.** Each stub throws `UnsupportedOperationException("TODO")`. While that line is there, its tests are reported as *skipped*. Delete it, write your solution and the tests run. `./lc test` stays green, and the skipped count is your to-do list.
-- **No LeetCode login, no scraping.** Everything runs locally with `mvn test`. To submit, paste the method body into LeetCode.
-- **More than algorithms.** It also includes a mistake log, favorites, a pattern cheat sheet, a STAR template for behavioral questions, a Java scratchpad and a Spring Boot playground for backend questions.
+- **No LeetCode login, no scraping.** Everything runs locally with `./lc test`. To submit, paste the method body into LeetCode.
+- **Your solutions, your repo.** Every copy is your own repository (private if you like). Your solutions, tests and notes live there, and `./lc update` still brings in template improvements without touching them.
+- **Notes next to the code.** A mistake log, favorites, a pattern cheat sheet and a Java scratchpad for trying ideas.
 
 ## Quick start
 
@@ -60,7 +61,6 @@ In the solution file, delete the `throw new UnsupportedOperationException("TODO"
 | `./lc new <no> <slug> <pattern> [signature]` | Add any problem, e.g. `./lc new 1 two-sum hashing "int[] twoSum(int[] nums, int target)"` |
 | `./lc fav <no> [note]` | Add the problem to `notes/favorites.md` |
 | `./lc try [file]` | Run `playground/Scratch.java` (or the given file) |
-| `./lc spring` | Start the Spring Boot playground on http://localhost:8080 |
 | `./lc update` | Pull the latest CLI, helpers and new stubs from this template (see below) |
 
 ## Layout
@@ -78,9 +78,8 @@ In the solution file, delete the `throw new UnsupportedOperationException("TODO"
 ├── scripts/
 │   ├── blind75.tsv                 ← problem list (number, slug, pattern, title, signature)
 │   └── seed.sh                     ← creates missing stubs from a list (default: blind75.tsv)
-├── notes/                          ← mistakes, favorites, patterns, behavioral (STAR)
-├── playground/Scratch.java         ← free experiments
-└── spring/spring-playground/       ← Spring Boot: web, JPA, H2, validation, actuator
+├── notes/                          ← mistakes, favorites, pattern cheat sheet
+└── playground/Scratch.java         ← free experiments
 ```
 
 ## Tips

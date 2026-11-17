@@ -1,6 +1,5 @@
 {
   "recommendations": [
-    "vscjava.vscode-java-pack",
-    "vmware.vscode-boot-dev-pack"
+    "vscjava.vscode-java-pack"
   ]
 }

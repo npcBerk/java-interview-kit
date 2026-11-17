@@ -40,7 +40,6 @@ Usage: ./lc <command>
                               Several methods: separate them with ";;"
   fav <no> [note]             Add a problem to notes/favorites.md
   try [file]                  Run playground/Scratch.java (or the given file)
-  spring                      Start the Spring Boot playground (http://localhost:8080)
   update                      Pull the latest CLI, helpers and new stubs from the template
                               (never touches your solutions, tests or notes)
 
@@ -176,7 +175,6 @@ cmd_try() {
   java -cp "$LC/target/classes" "$file"
 }
 
-cmd_spring() { cd "$ROOT/spring/spring-playground" && ./mvnw -ntp spring-boot:run; }
 
 # Files owned by the template. Solutions, tests and notes are never in this list.
 TOOL_PATHS=(lc scripts leetcode/templates leetcode/mvnw leetcode/mvnw.cmd leetcode/.mvn
@@ -203,7 +201,6 @@ case "${1:-help}" in
   fav)      shift; cmd_fav "$@" ;;
   open)     shift; cmd_open "$@" ;;
   try)      shift; cmd_try "$@" ;;
-  spring)   cmd_spring ;;
   update)   cmd_update ;;
   *)        cmd_help ;;
 esac

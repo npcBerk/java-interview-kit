@@ -17,8 +17,5 @@ jobs:
           cache: maven
       - name: Shellcheck
         run: shellcheck lc scripts/*.sh
-      - name: LeetCode module
+      - name: Tests
         run: ./lc test
-      - name: Spring playground
-        working-directory: spring/spring-playground
-        run: ./mvnw -B -ntp test
