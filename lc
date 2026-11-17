@@ -1,0 +1,190 @@
+#!/usr/bin/env bash
+# Java Interview Kit helper. Run ./lc help for usage.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LC="$ROOT/leetcode"
+SRC="$LC/src/main/java/interviewkit/problems"
+TEST="$LC/src/test/java/interviewkit/problems"
+FAV="$ROOT/notes/favorites.md"
+PATTERNS="arrays strings hashing twopointers slidingwindow stack binarysearch linkedlist trees heap graph greedy intervals dp backtracking bit design math"
+TODO_MARK='UnsupportedOperationException("TODO")'
+
+die() { echo "Error: $*" >&2; exit 1; }
+
+find_solution() {
+  local f
+  f=$(find "$SRC" -name "P$1_*.java" | head -1)
+  [ -n "$f" ] || die "#$1 not found. Create it first: ./lc new $1 <slug> <pattern>"
+  echo "$f"
+}
+
+title_of()   { sed -n 's/^ \* [0-9]*\. //p' "$1" | head -1; }
+num_of()     { basename "$1" | sed 's/^P\([0-9]*\)_.*/\1/'; }
+pattern_of() { basename "$(dirname "$1")"; }
+is_solved()  { ! grep -q "$TODO_MARK" "$1"; }
+all_solutions() { find "$SRC" -name 'P*_*.java' 2>/dev/null; }
+
+cmd_help() {
+  cat <<EOF
+Usage: ./lc <command>
+
+  list [pattern]              List problems  (✓ solved, · todo, ★ favorite)
+  progress                    Solved / total per pattern
+  random [pattern]            Pick a random unsolved problem
+  open <no>                   Open the solution and its test in your editor
+  test [no]                   Run one problem's tests (or all of them)
+  new <no> <slug> <pattern> [signature]
+                              Create a solution + test skeleton
+                              e.g. ./lc new 1 two-sum hashing "int[] twoSum(int[] nums, int target)"
+                              Several methods: separate them with ";;"
+  fav <no> [note]             Add a problem to notes/favorites.md
+  try [file]                  Run playground/Scratch.java (or the given file)
+  spring                      Start the Spring Boot playground (http://localhost:8080)
+
+Patterns: $PATTERNS
+EOF
+}
+
+# Renders "sig1;;sig2" into method stubs that throw TODO.
+render_methods() {
+  local sigs="$1" sig out="" first=1
+  local IFS=$'\n'
+  for sig in $(printf '%s\n' "${sigs//;;/$'\n'}" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | grep -v '^$'); do
+    [ $first -eq 1 ] || out+=$'\n'
+    first=0
+    out+="    public $sig {"$'\n'"        throw new $TODO_MARK;"$'\n'"    }"$'\n'
+  done
+  printf '%s' "$out"
+}
+
+cmd_new() {
+  [ $# -ge 3 ] || die "usage: ./lc new <no> <slug> <pattern> [signature]"
+  local num="$1" slug="$2" pkg="$3" sig="${4:-int solve(int[] nums)}"
+  case " $PATTERNS " in *" $pkg "*) ;; *) die "unknown pattern '$pkg'. Options: $PATTERNS";; esac
+  [[ "$num" =~ ^[0-9]+$ ]] || die "problem number must be numeric: '$num'"
+  if all_solutions | grep -q "/P${num}_"; then die "#$num already exists: $(find_solution "$num")"; fi
+
+  local pascal title cls
+  # Capitalize the first letter of every slug word: two-sum -> TwoSum, 3sum -> 3Sum
+  pascal=$(echo "$slug" | awk -F- '{for(i=1;i<=NF;i++){w=$i; p=match(w,/[a-z]/); if(p) w=substr(w,1,p-1) toupper(substr(w,p,1)) substr(w,p+1); printf "%s", w}}')
+  title="${LC_TITLE:-$(echo "$slug" | awk -F- '{for(i=1;i<=NF;i++) printf "%s%s", (i>1?" ":""), toupper(substr($i,1,1)) substr($i,2)}')}"
+  cls="P${num}_${pascal}"
+
+  mkdir -p "$SRC/$pkg" "$TEST/$pkg"
+  local pair
+  for pair in "Solution.java.tmpl:$SRC/$pkg/$cls.java" "SolutionTest.java.tmpl:$TEST/$pkg/${cls}Test.java"; do
+    T_PKG="$pkg" T_NUM="$num" T_TITLE="$title" T_URL="https://leetcode.com/problems/${slug}/" T_CLASS="$cls" \
+    T_METHODS="$(render_methods "$sig")"$'\n' \
+    T_CALL="$(printf '%s' "$sig" | sed 's/(.*//; s/.* //')" \
+    awk '{
+      gsub(/__PKG__/, ENVIRON["T_PKG"]); gsub(/__NUM__/, ENVIRON["T_NUM"]); gsub(/__TITLE__/, ENVIRON["T_TITLE"])
+      gsub(/__URL__/, ENVIRON["T_URL"]); gsub(/__CLASS__/, ENVIRON["T_CLASS"]); gsub(/__CALL__/, ENVIRON["T_CALL"])
+      if ($0 ~ /__METHODS__/) { sub(/__METHODS__/, ""); printf "%s", ENVIRON["T_METHODS"] }
+      print
+    }' "$LC/templates/${pair%%:*}" > "${pair#*:}"
+  done
+  echo "Created:"
+  echo "  ${SRC#"$ROOT"/}/$pkg/$cls.java"
+  echo "  ${TEST#"$ROOT"/}/$pkg/${cls}Test.java"
+}
+
+cmd_test() {
+  local filter=() log
+  if [ $# -ge 1 ]; then
+    find_solution "$1" >/dev/null
+    filter=("-Dtest=P$1_*Test" "-Dsurefire.failIfNoSpecifiedTests=false")
+  fi
+  log=$(mktemp)
+  if (cd "$LC" && mvn -B -ntp test ${filter[@]+"${filter[@]}"} >"$log" 2>&1); then
+    grep -E "^\[(INFO|WARNING)\] Tests run:" "$log" | tail -1 | sed 's/^\[[A-Z]*\] /✓ /'
+  else
+    awk '/COMPILATION ERROR|\[ERROR\] (Failures|Errors):/{p=1} /BUILD FAILURE/{p=0} p' "$log"
+    rm -f "$log"; exit 1
+  fi
+  rm -f "$log"
+}
+
+cmd_list() {
+  local f num mark star pkg total=0 solved=0 rows=""
+  for f in $(all_solutions); do
+    pkg=$(pattern_of "$f")
+    [ $# -ge 1 ] && [ "$pkg" != "$1" ] && continue
+    num=$(num_of "$f")
+    total=$((total+1))
+    if is_solved "$f"; then mark="✓"; solved=$((solved+1)); else mark="·"; fi
+    star=" "; grep -q "^- \*\*$num\*\*" "$FAV" 2>/dev/null && star="★"
+    rows+="$pkg"$'\t'"$num"$'\t'"$(printf "%s %s %5s  %-14s %s" "$mark" "$star" "$num" "$pkg" "$(title_of "$f")")"$'\n'
+  done
+  printf "%s" "$rows" | sort -t$'\t' -k1,1 -k2,2n | cut -f3-
+  echo
+  echo "Solved: $solved / $total"
+}
+
+cmd_progress() {
+  local f
+  for f in $(all_solutions); do
+    if is_solved "$f"; then echo "$(pattern_of "$f") 1"; else echo "$(pattern_of "$f") 0"; fi
+  done | sort | awk '
+    { t[$1]++; s[$1]+=$2; T++; S+=$2 }
+    END {
+      for (p in t) {
+        bar = ""; n = int(20 * s[p] / t[p]); for (i = 0; i < 20; i++) bar = bar (i < n ? "█" : "░")
+        printf "%-14s %s %3d / %d\n", p, bar, s[p], t[p] | "sort"
+      }
+      close("sort")
+      printf "\n%-14s %24d / %d\n", "total", S, T
+    }'
+}
+
+cmd_random() {
+  local f picks=()
+  for f in $(all_solutions); do
+    [ $# -ge 1 ] && [ "$(pattern_of "$f")" != "$1" ] && continue
+    is_solved "$f" || picks+=("$f")
+  done
+  [ ${#picks[@]} -gt 0 ] || { echo "Nothing left to solve here. 🎉"; return; }
+  f="${picks[RANDOM % ${#picks[@]}]}"
+  echo "→ #$(num_of "$f") $(title_of "$f")  [$(pattern_of "$f")]"
+  echo "  ./lc open $(num_of "$f")"
+}
+
+cmd_fav() {
+  [ $# -ge 1 ] || die "usage: ./lc fav <no> [note]"
+  local f num rel note=""
+  f=$(find_solution "$1"); num=$(num_of "$f"); rel="../${f#"$ROOT"/}"
+  shift; [ $# -ge 1 ] && note=" — $*"
+  grep -q "^- \*\*$num\*\*" "$FAV" && die "already a favorite"
+  echo "- **$num** [$(title_of "$f")]($rel)$note" >> "$FAV"
+  echo "★ added to notes/favorites.md"
+}
+
+cmd_open() {
+  [ $# -ge 1 ] || die "usage: ./lc open <no>"
+  local f t editor
+  f=$(find_solution "$1"); t=$(echo "$f" | sed 's|/src/main/|/src/test/|; s|\.java$|Test.java|')
+  editor=$(command -v cursor || command -v code || command -v idea || true)
+  [ -n "$editor" ] || { echo "$f"; echo "$t"; return; }
+  "$editor" "$ROOT" "$f" "$t"
+}
+
+cmd_try() {
+  local file="${1:-$ROOT/playground/Scratch.java}"
+  (cd "$LC" && mvn -B -ntp -q compile) || die "could not compile the leetcode module"
+  java -cp "$LC/target/classes" "$file"
+}
+
+cmd_spring() { cd "$ROOT/spring/spring-playground" && ./mvnw -ntp spring-boot:run; }
+
+case "${1:-help}" in
+  new)      shift; cmd_new "$@" ;;
+  test)     shift; cmd_test "$@" ;;
+  list|ls)  shift; cmd_list "$@" ;;
+  progress) cmd_progress ;;
+  random)   shift; cmd_random "$@" ;;
+  fav)      shift; cmd_fav "$@" ;;
+  open)     shift; cmd_open "$@" ;;
+  try)      shift; cmd_try "$@" ;;
+  spring)   cmd_spring ;;
+  *)        cmd_help ;;
+esac
