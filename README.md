@@ -6,7 +6,7 @@
 
 A ready-to-use **GitHub template** for coding-interview prep in Java. It's offline and works pattern by pattern.
 
-Java 21 · Maven · JUnit 5 + AssertJ · one small CLI (`./lc`)
+Java 21 · Maven · JUnit 6 + AssertJ · one small CLI (`./lc`)
 
 <p align="center"><img src="docs/demo.svg" alt="lc CLI: progress per pattern, problem list with solved and favorite marks, a random pick and the test summary" width="520"></p>
 

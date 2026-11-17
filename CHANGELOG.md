@@ -3,6 +3,12 @@
 All notable changes to this project are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-11-17
+
+### Changed
+- JUnit 5.11 → 6.1, AssertJ 3.27.7, Surefire 3.6.1.
+- CI: actions/checkout v7, actions/setup-java v6.
+
 ## [1.1.0] - 2026-11-17
 
 ### Removed
@@ -21,5 +27,6 @@ All notable changes to this project are listed here. The format follows
 - Scratch playground and a Spring Boot playground (web, JPA, H2, validation, actuator).
 - Maven wrapper, so only a JDK is needed.
 
+[1.1.1]: https://github.com/npcBerk/java-interview-kit/releases/tag/v1.1.1
 [1.1.0]: https://github.com/npcBerk/java-interview-kit/releases/tag/v1.1.0
 [1.0.0]: https://github.com/npcBerk/java-interview-kit/releases/tag/v1.0.0
